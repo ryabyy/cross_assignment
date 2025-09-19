@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'gray',
     borderRadius: 10,
   },
   dateText: {

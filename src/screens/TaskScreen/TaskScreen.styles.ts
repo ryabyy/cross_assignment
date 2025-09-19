@@ -1,36 +1,13 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
-  form: {
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
     padding: 20,
-  },
-  label: {
-    fontSize: 14,
-    color: '#444',
-    marginBottom: 6,
-    marginLeft: 2,
-  },
-  input: {
-    height: 45,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingLeft: 10,
-    borderRadius: 10,
-    fontSize: 16,
-    textAlignVertical: 'center',
-  },
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 20,
-    marginTop: 10,
-  },
-  dates: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 20,
-    marginTop: 10,
   },
   dateLabelsRow: {
     flexDirection: 'row',
@@ -45,15 +22,18 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 6,
   },
+  dateHyphen: {
+    width: 24,
+    textAlign: 'center',
+    color: '#999',
+  },
   datePickersRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  dateHyphen: {
-    width: 24,
-    textAlign: 'center',
-    color: '#999',
+  dateMiddleSpacer: {
+    width: 12,
   },
   metaRow: {
     flexDirection: 'row',
@@ -84,12 +64,23 @@ export const styles = StyleSheet.create({
   },
   priorityBox: {
     width: 56,
-    height: 45,
+    height: 56,
     borderColor: 'gray',
     borderWidth: 1,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
+  },
+  bottomButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    backgroundColor: '#f8f9fa',
+    borderTopWidth: 1,
+    borderTopColor: '#e9ecef',
+    gap: 20,
   },
 });

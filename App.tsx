@@ -1,12 +1,15 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import HomeScreen from './src/screens/HomeScreen/HomeScreen';
+import { NavigationContainer } from '@react-navigation/native';
+import DrawerNavigator from './src/navigation/DrawerNavigator';
 
 export default function App() {
   return (
     <SafeAreaView style={styles.container}>
-      <HomeScreen />
+      <NavigationContainer>
+        <DrawerNavigator />
+      </NavigationContainer>
     </SafeAreaView>
   );
 }

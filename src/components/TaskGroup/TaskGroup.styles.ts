@@ -6,7 +6,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     backgroundColor: '#f4f4f4',
-    borderBottomWidth: 1,
     borderColor: '#ddd',
   },
   colorBar: {

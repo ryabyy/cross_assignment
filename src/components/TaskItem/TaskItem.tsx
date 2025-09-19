@@ -1,28 +1,46 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { View, Text, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './TaskItem.styles';
 
 interface TaskItemProps {
+  taskId: string;
   taskName: string;
+  completed?: boolean;
   onMarkComplete: () => void;
   onDelete: () => void;
+  onPress: (taskId: string, taskName: string) => void;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
+  taskId,
   taskName,
+  completed = false,
   onMarkComplete,
   onDelete,
+  onPress,
 }) => (
-  <View style={styles.container}>
+  <TouchableOpacity 
+    style={styles.container} 
+    onPress={() => onPress(taskId, taskName)}
+    activeOpacity={0.7}
+  >
     <TouchableOpacity onPress={onMarkComplete} style={styles.tick}>
-      <Icon name="check-circle" size={24} color="gray" />
+      <Icon name="checkbox-marked-circle-outline" size={24} color={completed ? '#006dfc' : 'gray'} />
     </TouchableOpacity>
-    <Text style={styles.taskName}>{taskName}</Text>
+    <Text
+      style={[
+        styles.taskName,
+        completed ? { textDecorationLine: 'line-through', color: '#888' } : null,
+      ]}
+    >
+      {taskName}
+    </Text>
     <TouchableOpacity onPress={onDelete} style={styles.delete}>
       <Icon name="delete" size={24} color="#c04a4a" />
     </TouchableOpacity>
-  </View>
+  </TouchableOpacity>
 );
 
 export default TaskItem;
+
