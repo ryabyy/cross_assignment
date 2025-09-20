@@ -1,8 +1,10 @@
-import React from 'react';
-import { View, TextInput, Text } from 'react-native';
+import React, { useState } from 'react';
+import { View, TextInput, Text, TouchableOpacity, Modal } from 'react-native';
 import { styles } from './TaskForm.styles';
 import DatePicker from '../DatePicker/DatePicker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { PriorityLevel } from '../../api/types';
+import { getPriorityIcon } from '../../api/utils';
 
 interface TaskFormProps {
   name: string;
@@ -15,6 +17,8 @@ interface TaskFormProps {
   onChangeEndDate: (date: string) => void;
   tags: string;
   onChangeTags: (text: string) => void;
+  priority?: PriorityLevel;
+  onChangePriority?: (priority: PriorityLevel) => void;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({
@@ -28,7 +32,11 @@ const TaskForm: React.FC<TaskFormProps> = ({
   onChangeEndDate,
   tags,
   onChangeTags,
+  priority = 'medium',
+  onChangePriority,
 }) => {
+  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const priorities: PriorityLevel[] = ['low', 'medium', 'high'];
   return (
     <View style={styles.form}>
       <Text style={styles.label}>Task name</Text>
@@ -70,11 +78,63 @@ const TaskForm: React.FC<TaskFormProps> = ({
         </View>
         <View style={styles.metaColumnNarrow}>
           <Text style={styles.metaLabel}>Priority</Text>
-          <View style={styles.priorityBox}>
-            <Icon name="drag-handle" size={32} color="#FF8C00" />
-          </View>
+          <TouchableOpacity 
+            style={styles.priorityBox}
+            onPress={() => onChangePriority && setShowPriorityDropdown(true)}
+            disabled={!onChangePriority}
+          >
+            <Icon 
+              name={getPriorityIcon(priority)} 
+              size={24} 
+              color="#FF8C00" 
+            />
+          </TouchableOpacity>
         </View>
       </View>
+      
+      {onChangePriority && (
+        <Modal
+          visible={showPriorityDropdown}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowPriorityDropdown(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowPriorityDropdown(false)}
+          >
+            <View style={styles.priorityDropdown}>
+              <Text style={styles.dropdownTitle}>Select Priority</Text>
+              {priorities.map((p) => (
+                <TouchableOpacity
+                  key={p}
+                  style={[
+                    styles.priorityOption,
+                    priority === p && styles.priorityOptionSelected
+                  ]}
+                  onPress={() => {
+                    onChangePriority(p);
+                    setShowPriorityDropdown(false);
+                  }}
+                >
+                  <Icon 
+                    name={getPriorityIcon(p)} 
+                    size={20} 
+                    color={priority === p ? '#1976d2' : '#666'} 
+                  />
+                  <Text style={[
+                    styles.priorityOptionText,
+                    priority === p && styles.priorityOptionTextSelected
+                  ]}>
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </View>
   );
 };

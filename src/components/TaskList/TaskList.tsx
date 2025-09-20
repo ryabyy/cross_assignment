@@ -1,19 +1,16 @@
 import React from 'react';
-import { FlatList } from 'react-native';
+import { FlatList, RefreshControl } from 'react-native';
 import TaskItem from '../TaskItem/TaskItem';
 import { styles } from './TaskList.styles';
-
-interface Task {
-  id: string;
-  name: string;
-  completed?: boolean;
-}
+import { TaskWithPriority } from '../../api/types';
 
 interface TaskListProps {
-  tasks: Task[];
+  tasks: TaskWithPriority[];
   onTaskComplete: (taskId: string) => void;
   onTaskDelete: (taskId: string) => void;
   onTaskPress: (taskId: string, taskName: string) => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -21,20 +18,28 @@ const TaskList: React.FC<TaskListProps> = ({
   onTaskComplete,
   onTaskDelete,
   onTaskPress,
+  onRefresh,
+  refreshing = false,
 }) => (
   <FlatList
     data={tasks}
     renderItem={({ item }) => (
       <TaskItem
         taskId={item.id}
-        taskName={item.name}
+        taskName={item.title}
         completed={!!item.completed}
+        priority={item.priority}
         onMarkComplete={() => onTaskComplete(item.id)}
         onDelete={() => onTaskDelete(item.id)}
         onPress={onTaskPress}
       />
     )}
     keyExtractor={item => item.id}
+    refreshControl={
+      onRefresh ? (
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      ) : undefined
+    }
   />
 );
 

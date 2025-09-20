@@ -42,4 +42,18 @@ export const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     fontSize: 16,
   },
+  addButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#f1f1f1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  addButtonPressed: {
+    backgroundColor: '#e0e0e0',
+    transform: [{ scale: 0.95 }],
+  },
 });

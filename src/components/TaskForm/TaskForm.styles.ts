@@ -37,6 +37,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 8,
+    gap: 50, // TODO: improve this solution - not good for other device sizes
   },
   dateLabel: {
     flex: 1,
@@ -54,6 +55,8 @@ export const styles = StyleSheet.create({
     width: 24,
     textAlign: 'center',
     color: '#999',
+    paddingBottom: 12,
+    fontSize: 18,
   },
   metaRow: {
     flexDirection: 'row',
@@ -91,5 +94,53 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  priorityDropdown: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dropdownTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  priorityOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginVertical: 2,
+  },
+  priorityOptionSelected: {
+    backgroundColor: '#e3f2fd',
+  },
+  priorityOptionText: {
+    fontSize: 16,
+    color: '#666',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  priorityOptionTextSelected: {
+    color: '#1976d2',
+    fontWeight: 'bold',
   },
 });
