@@ -8,6 +8,7 @@ export interface Task {
   priority: number; // 0-100 from API
   completed: boolean;
   createdAt: string;
+  group_id: number;
 }
 
 export interface CreateTaskRequest {
@@ -19,6 +20,7 @@ export interface CreateTaskRequest {
   priority: number;
   completed: boolean;
   createdAt?: string;
+  group_id: number;
 }
 
 export interface UpdateTaskRequest extends Partial<CreateTaskRequest> {

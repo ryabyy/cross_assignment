@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Alert, Text, TextInput, BackHandler } from 'react-native';
+import { View, Alert, BackHandler } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import TaskForm from '../../components/TaskForm/TaskForm';
@@ -7,9 +7,11 @@ import Button from '../../components/Button/Button';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from './TaskScreen.styles';
 import TaskGroup from '../../components/TaskGroup/TaskGroup';
-import { TaskService } from '../../api';
 import { TaskWithPriority, CreateTaskRequest, PriorityLevel } from '../../api/types';
 import { convertPriorityToNumber } from '../../api/utils';
+import { useAppDispatch } from '../../store/hooks';
+import { createTask as createTaskThunk, updateTask as updateTaskThunk, deleteTask as deleteTaskThunk, toggleTaskCompletion as toggleTaskCompletionThunk } from '../../store/tasksSlice';
+import { useTaskGroup } from '../../context/TaskGroupContext';
 
 type RootStackParamList = {
   TaskDetails: { 
@@ -28,6 +30,8 @@ const TaskScreen: React.FC = () => {
   const route = useRoute<TaskScreenRouteProp>();
   const navigation = useNavigation<TaskScreenNavigationProp>();
   const { taskId, taskName = '', isNew = false, completed, task } = route.params || {};
+  const dispatch = useAppDispatch();
+  const { groups, selectedGroup } = useTaskGroup();
 
   const [name, setName] = useState<string>(taskName);
   const [details, setDetails] = useState<string>('');
@@ -37,6 +41,7 @@ const TaskScreen: React.FC = () => {
   const [tags, setTags] = useState<string>('');
   const [priority, setPriority] = useState<PriorityLevel>('medium');
   const [loading, setLoading] = useState(false);
+  const [groupId, setGroupId] = useState<number>(task?.group_id ?? selectedGroup.id);
   
   const [originalState, setOriginalState] = useState<{
     name: string;
@@ -46,6 +51,7 @@ const TaskScreen: React.FC = () => {
     endDate: string;
     tags: string;
     priority: PriorityLevel;
+    groupId: number;
   } | null>(null);
 
   useEffect(() => {
@@ -58,6 +64,7 @@ const TaskScreen: React.FC = () => {
         endDate: task.end_date,
         tags: task.tags,
         priority: task.priority,
+        groupId: task.group_id,
       };
       
       setName(taskData.name);
@@ -67,6 +74,7 @@ const TaskScreen: React.FC = () => {
       setEndDate(taskData.endDate);
       setTags(taskData.tags);
       setPriority(taskData.priority);
+      setGroupId(taskData.groupId);
       
       setOriginalState(taskData);
     }
@@ -81,7 +89,8 @@ const TaskScreen: React.FC = () => {
       startDate !== originalState.startDate ||
       endDate !== originalState.endDate ||
       tags !== originalState.tags ||
-      priority !== originalState.priority
+      priority !== originalState.priority ||
+      groupId !== originalState.groupId
     );
   };
 
@@ -126,9 +135,9 @@ const TaskScreen: React.FC = () => {
         tags: tags,
         priority: convertPriorityToNumber(priority),
         completed: isCompleted,
+        group_id: groupId,
       };
-      
-      await TaskService.updateTask(taskId, updateData);
+      await dispatch(updateTaskThunk({ id: taskId, updates: updateData }));
     } catch (error) {
       console.error('Auto-save failed:', error);
     }
@@ -151,7 +160,7 @@ const TaskScreen: React.FC = () => {
           onPress: async () => {
             try {
               setLoading(true);
-              await TaskService.deleteTask(taskId!);
+              await dispatch(deleteTaskThunk(taskId!));
               navigation.goBack();
             } catch (error) {
               console.error('Failed to delete task:', error);
@@ -171,8 +180,7 @@ const TaskScreen: React.FC = () => {
     
     if (taskId) {
       try {
-        await TaskService.toggleTaskCompletion(taskId, newCompleted);
-        
+        await dispatch(toggleTaskCompletionThunk({ id: taskId, completed: newCompleted }));
         if (originalState) {
           setOriginalState({
             ...originalState,
@@ -204,9 +212,10 @@ const TaskScreen: React.FC = () => {
         priority: convertPriorityToNumber(priority),
         completed: isCompleted,
         createdAt: new Date().toISOString(),
+        group_id: groupId,
       };
       
-      await TaskService.createTask(newTaskData);
+      await dispatch(createTaskThunk(newTaskData));
       navigation.goBack();
     } catch (error) {
       console.error('Failed to create task:', error);
@@ -232,9 +241,10 @@ const TaskScreen: React.FC = () => {
         tags: tags,
         priority: convertPriorityToNumber(priority),
         completed: isCompleted,
+        group_id: groupId,
       };
       
-      await TaskService.updateTask(taskId, updateData);
+      await dispatch(updateTaskThunk({ id: taskId, updates: updateData }));
       
       setOriginalState({
         name,
@@ -244,6 +254,7 @@ const TaskScreen: React.FC = () => {
         endDate,
         tags,
         priority,
+        groupId,
       });
       
       navigation.goBack();
@@ -275,9 +286,11 @@ const TaskScreen: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.content}>
         <TaskGroup
-          groupName={'Personal tasks  '}
-          groupColor={'#4cd484'}
-          onSelectGroup={() => {}}
+          groupName={(groups.find(g => g.id === groupId)?.name || selectedGroup.name) + '  '}
+          groupColor={groups.find(g => g.id === groupId)?.color || selectedGroup.color}
+          onSelectGroup={(g) => {
+            setGroupId(g.id);
+          }}
         />
         <TaskForm
           name={name}

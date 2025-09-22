@@ -1,5 +1,4 @@
 export { TaskService } from './taskService';
-export { saveTasksToCache, loadTasksFromCache, clearCache } from './cache';
 export { 
   convertPriority, 
   convertPriorityToNumber, 

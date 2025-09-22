@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { Task, CreateTaskRequest, UpdateTaskRequest, TaskWithPriority } from './types';
-import { transformTask, transformTaskForAPI } from './utils';
-import { saveTasksToCache, loadTasksFromCache, clearCache } from './cache';
+import { Task, CreateTaskRequest, TaskWithPriority } from './types';
+import { transformTask } from './utils';
 
 const BASE_URL = 'https://6840ae275b39a8039a58d780.mockapi.io/todos';
 
@@ -40,36 +39,12 @@ export class TaskService {
     try {
       const response = await api.get<Task[]>('/');
       const tasks = response.data.map(transformTask);
-
       const sortedTasks = tasks.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-
-      await saveTasksToCache(sortedTasks);
-
       return sortedTasks;
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
-
-      const cachedTasks = await loadTasksFromCache();
-      if (cachedTasks) {
-        console.log('Loaded tasks from cache due to API error');
-        return cachedTasks;
-      }
-
-      throw error;
-    }
-  }
-
-  static async getTasksWithCache(): Promise<TaskWithPriority[]> {
-    try {
-      return await this.getTasks();
-    } catch (error) {
-      const cachedTasks = await loadTasksFromCache();
-      if (cachedTasks) {
-        console.log('Using cached tasks due to API error');
-        return cachedTasks;
-      }
       throw error;
     }
   }
@@ -78,11 +53,6 @@ export class TaskService {
     try {
       const response = await api.post<Task>('/', taskData);
       const newTask = transformTask(response.data);
-
-      const currentTasks = await loadTasksFromCache() || [];
-      const updatedTasks = [newTask, ...currentTasks];
-      await saveTasksToCache(updatedTasks);
-
       return newTask;
     } catch (error) {
       console.error('Failed to create task:', error);
@@ -94,13 +64,6 @@ export class TaskService {
     try {
       const response = await api.put<Task>(`/${taskId}`, updates);
       const updatedTask = transformTask(response.data);
-
-      const currentTasks = await loadTasksFromCache() || [];
-      const updatedTasks = currentTasks.map(task =>
-        task.id === taskId ? updatedTask : task
-      );
-      await saveTasksToCache(updatedTasks);
-
       return updatedTask;
     } catch (error) {
       console.error('Failed to update task:', error);
@@ -111,10 +74,6 @@ export class TaskService {
   static async deleteTask(taskId: string): Promise<void> {
     try {
       await api.delete(`/${taskId}`);
-
-      const currentTasks = await loadTasksFromCache() || [];
-      const updatedTasks = currentTasks.filter(task => task.id !== taskId);
-      await saveTasksToCache(updatedTasks);
     } catch (error) {
       console.error('Failed to delete task:', error);
       throw error;
@@ -123,10 +82,6 @@ export class TaskService {
 
   static async toggleTaskCompletion(taskId: string, completed: boolean): Promise<TaskWithPriority> {
     return this.updateTask(taskId, { completed });
-  }
-
-  static async clearCache(): Promise<void> {
-    await clearCache();
   }
 }
 

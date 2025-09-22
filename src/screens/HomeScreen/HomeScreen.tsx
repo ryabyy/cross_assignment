@@ -1,46 +1,44 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, TextInput, Alert, RefreshControl, Pressable } from 'react-native';
+import { View, TextInput, Alert, Pressable } from 'react-native';
 import Header from '../../components/Header/Header';
 import TaskList from '../../components/TaskList/TaskList';
-import Button from '../../components/Button/Button';
 import ButtonTab from '../../components/ButtonTab/ButtonTab';
 import TaskGroup from '../../components/TaskGroup/TaskGroup';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from './HomeScreen.styles';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SCREENS } from '../../constants/screens';
-import { TaskService } from '../../api';
-import { TaskWithPriority } from '../../api/types';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { createTask, deleteTask, fetchTasks, toggleTaskCompletion } from '../../store/tasksSlice';
+import { useTaskGroup } from '../../context/TaskGroupContext';
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
-  const [tasks, setTasks] = useState<TaskWithPriority[]>([]);
+  const dispatch = useAppDispatch();
+  const tasks = useAppSelector(state => state.tasks.items);
+  const loading = useAppSelector(state => state.tasks.loading);
+  const { selectedGroup } = useTaskGroup();
   const [newTaskName, setNewTaskName] = useState('');
-  const [loading, setLoading] = useState(true);
   type StatusFilter = 'all' | 'in_progress' | 'completed';
   const [status, setStatus] = useState<StatusFilter>('all');
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    dispatch(fetchTasks());
+  }, [dispatch]);
 
   useFocusEffect(
     useCallback(() => {
-      loadTasks();
+      dispatch(fetchTasks());
       return () => {};
-    }, [])
+    }, [dispatch])
   );
 
   const loadTasks = async () => {
     try {
-      setLoading(true);
-      const fetchedTasks = await TaskService.getTasksWithCache();
-      setTasks(fetchedTasks);
+      await dispatch(fetchTasks());
     } catch (error) {
       console.error('Failed to load tasks:', error);
       Alert.alert('Error', 'Failed to load tasks. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -48,11 +46,7 @@ const HomeScreen: React.FC = () => {
     try {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
-
-      const updatedTask = await TaskService.toggleTaskCompletion(taskId, !task.completed);
-      setTasks(prev =>
-        prev.map(t => (t.id === taskId ? updatedTask : t)),
-      );
+      await dispatch(toggleTaskCompletion({ id: taskId, completed: !task.completed }));
     } catch (error) {
       console.error('Failed to update task:', error);
       Alert.alert('Error', 'Failed to update task. Please try again.');
@@ -70,8 +64,7 @@ const HomeScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await TaskService.deleteTask(taskId);
-              setTasks(prev => prev.filter(task => task.id !== taskId));
+              await dispatch(deleteTask(taskId));
             } catch (error) {
               console.error('Failed to delete task:', error);
               Alert.alert('Error', 'Failed to delete task. Please try again.');
@@ -119,11 +112,10 @@ const HomeScreen: React.FC = () => {
         priority: 50, // Medium priority
         completed: false,
         createdAt: new Date().toISOString(),
+        group_id: selectedGroup.id,
       };
-      
-      await TaskService.createTask(newTaskData);
+      await dispatch(createTask(newTaskData));
       setNewTaskName('');
-      loadTasks();
     } catch (error) {
       console.error('Failed to quick save task:', error);
       Alert.alert('Error', 'Failed to save task. Please try again.');
@@ -135,6 +127,7 @@ const HomeScreen: React.FC = () => {
   };
 
   const filteredTasks = tasks.filter(t => {
+    if (t.group_id !== selectedGroup.id) return false;
     if (status === 'all') return true;
     if (status === 'in_progress') return !t.completed;
     return !!t.completed;
@@ -157,9 +150,8 @@ const HomeScreen: React.FC = () => {
         />
       </View>
       <TaskGroup
-        groupName={'Personal tasks  '}
-        groupColor={'#4cd484'}
-        onSelectGroup={() => { }}
+        groupName={selectedGroup.name + '  '}
+        groupColor={selectedGroup.color}
       />
       <TaskList
         tasks={filteredTasks}
