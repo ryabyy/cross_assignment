@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { styles } from './DatePicker.styles';
 import { formatDateDisplay } from '../../api/utils';
 
@@ -31,10 +32,23 @@ const DatePicker: React.FC<DatePickerProps> = ({
         style={styles.datePicker}
       >
         <Text style={styles.dateText}>{selectedDate ? formatDateDisplay(selectedDate) : 'set date'}</Text>
-        <Icon name="calendar-today" size={24} color="#006dfc" />
+        {selectedDate ? (
+          <TouchableOpacity onPress={() => onDateChange('')}>
+            <Icon name="close" size={22} color="#666" />
+          </TouchableOpacity>
+        ) : (
+          <Icon name="calendar-today" size={24} color="#006dfc" />
+        )}
       </TouchableOpacity>
+
+      <DateTimePickerModal
+        isVisible={isVisible}
+        mode="date"
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </View>
   );
 };
 
-export default DatePicker;
+export default React.memo(DatePicker);

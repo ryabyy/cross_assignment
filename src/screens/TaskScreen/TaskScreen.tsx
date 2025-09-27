@@ -9,7 +9,7 @@ import { styles } from './TaskScreen.styles';
 import TaskGroup from '../../components/TaskGroup/TaskGroup';
 import { TaskWithPriority, CreateTaskRequest, PriorityLevel } from '../../api/types';
 import { convertPriorityToNumber } from '../../api/utils';
-import { useAppDispatch } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { createTask as createTaskThunk, updateTask as updateTaskThunk, deleteTask as deleteTaskThunk, toggleTaskCompletion as toggleTaskCompletionThunk } from '../../store/tasksSlice';
 import { useTaskGroup } from '../../context/TaskGroupContext';
 
@@ -19,7 +19,6 @@ type RootStackParamList = {
     taskName?: string; 
     isNew?: boolean; 
     completed?: boolean;
-    task?: TaskWithPriority;
   };
 };
 
@@ -29,9 +28,13 @@ type TaskScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TaskDet
 const TaskScreen: React.FC = () => {
   const route = useRoute<TaskScreenRouteProp>();
   const navigation = useNavigation<TaskScreenNavigationProp>();
-  const { taskId, taskName = '', isNew = false, completed, task } = route.params || {};
+  const { taskId, taskName = '', isNew = false, completed } = route.params || {};
   const dispatch = useAppDispatch();
   const { groups, selectedGroup } = useTaskGroup();
+
+  const currentTask = useAppSelector(state =>
+    taskId ? state.tasks.items.find((t: TaskWithPriority) => t.id === taskId) : undefined
+  );
 
   const [name, setName] = useState<string>(taskName);
   const [details, setDetails] = useState<string>('');
@@ -41,7 +44,7 @@ const TaskScreen: React.FC = () => {
   const [tags, setTags] = useState<string>('');
   const [priority, setPriority] = useState<PriorityLevel>('medium');
   const [loading, setLoading] = useState(false);
-  const [groupId, setGroupId] = useState<number>(task?.group_id ?? selectedGroup.id);
+  const [groupId, setGroupId] = useState<number>(selectedGroup.id);
   
   const [originalState, setOriginalState] = useState<{
     name: string;
@@ -55,18 +58,18 @@ const TaskScreen: React.FC = () => {
   } | null>(null);
 
   useEffect(() => {
-    if (!isNew && task) {
+    if (!isNew && currentTask) {
       const taskData = {
-        name: task.title,
-        details: task.description,
-        isCompleted: task.completed,
-        startDate: task.start_date,
-        endDate: task.end_date,
-        tags: task.tags,
-        priority: task.priority,
-        groupId: task.group_id,
+        name: currentTask.title,
+        details: currentTask.description,
+        isCompleted: currentTask.completed,
+        startDate: currentTask.start_date,
+        endDate: currentTask.end_date,
+        tags: currentTask.tags,
+        priority: currentTask.priority,
+        groupId: currentTask.group_id,
       };
-      
+
       setName(taskData.name);
       setDetails(taskData.details);
       setIsCompleted(taskData.isCompleted);
@@ -75,10 +78,42 @@ const TaskScreen: React.FC = () => {
       setTags(taskData.tags);
       setPriority(taskData.priority);
       setGroupId(taskData.groupId);
-      
+
       setOriginalState(taskData);
     }
-  }, [isNew, task]);
+  }, [isNew, currentTask]);
+
+  const parseDate = (value: string): Date | null => {
+    if (!value) return null;
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const isOriginalDateInvalid = (): boolean => {
+    if (!originalState) return false;
+    const os = parseDate(originalState.startDate);
+    const oe = parseDate(originalState.endDate);
+    if (!os || !oe) return false;
+    return os.getTime() > oe.getTime();
+  };
+
+  const didUserChangeDates = (): boolean => {
+    if (!originalState) return true;
+    return (
+      startDate !== originalState.startDate ||
+      endDate !== originalState.endDate
+    );
+  };
+
+  const isDateRangeValidForSave = (): boolean => {
+    if (originalState && isOriginalDateInvalid() && !didUserChangeDates()) {
+      return true;
+    }
+    const s = parseDate(startDate);
+    const e = parseDate(endDate);
+    if (!s || !e) return true;
+    return s.getTime() <= e.getTime();
+  };
 
   const hasChanges = (): boolean => {
     if (!originalState || isNew) return false;
@@ -114,34 +149,6 @@ const TaskScreen: React.FC = () => {
     return () => backHandler.remove();
   }, [hasChanges, navigation]);
 
-  useEffect(() => {
-    if (!isNew && taskId && name.trim() && !hasChanges()) {
-      const timeoutId = setTimeout(() => {
-        handleAutoSave();
-      }, 1000);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isCompleted, isNew, taskId, hasChanges]);
-
-  const handleAutoSave = async () => {
-    if (!taskId || !name.trim()) return;
-    
-    try {
-      const updateData: Partial<CreateTaskRequest> = {
-        title: name,
-        description: details,
-        start_date: startDate,
-        end_date: endDate,
-        tags: tags,
-        priority: convertPriorityToNumber(priority),
-        completed: isCompleted,
-        group_id: groupId,
-      };
-      await dispatch(updateTaskThunk({ id: taskId, updates: updateData }));
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-    }
-  };
 
   const handleDelete = () => {
     if (isNew) {
@@ -190,7 +197,7 @@ const TaskScreen: React.FC = () => {
       } catch (error) {
         console.error('Failed to toggle completion:', error);
         Alert.alert('Error', 'Failed to update task. Please try again.');
-        setIsCompleted(!newCompleted); // Revert on error
+        setIsCompleted(!newCompleted);
       }
     }
   };
@@ -200,14 +207,18 @@ const TaskScreen: React.FC = () => {
       Alert.alert('Error', 'Please enter a task name.');
       return;
     }
+    if (!isDateRangeValidForSave()) {
+      Alert.alert('Invalid date range', 'Start date must be before or equal to end date.');
+      return;
+    }
 
     try {
       setLoading(true);
       const newTaskData: CreateTaskRequest = {
         title: name,
         description: details,
-        start_date: startDate || new Date().toISOString(),
-        end_date: endDate || new Date().toISOString(),
+        start_date: startDate,
+        end_date: endDate,
         tags: tags,
         priority: convertPriorityToNumber(priority),
         completed: isCompleted,
@@ -228,6 +239,10 @@ const TaskScreen: React.FC = () => {
   const handleSaveExistingTask = async () => {
     if (!taskId || !name.trim()) {
       Alert.alert('Error', 'Please enter a task name.');
+      return;
+    }
+    if (!isDateRangeValidForSave()) {
+      Alert.alert('Invalid date range', 'Start date must be before or equal to end date.');
       return;
     }
 

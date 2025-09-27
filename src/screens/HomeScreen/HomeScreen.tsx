@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, TextInput, Alert, Pressable } from 'react-native';
+import React, { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
+import { View, TextInput, Alert, Pressable, LayoutAnimation } from 'react-native';
 import Header from '../../components/Header/Header';
 import TaskList from '../../components/TaskList/TaskList';
 import ButtonTab from '../../components/ButtonTab/ButtonTab';
@@ -21,6 +21,7 @@ const HomeScreen: React.FC = () => {
   const [newTaskName, setNewTaskName] = useState('');
   type StatusFilter = 'all' | 'in_progress' | 'completed';
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchTasks());
@@ -33,6 +34,15 @@ const HomeScreen: React.FC = () => {
     }, [dispatch])
   );
 
+  useLayoutEffect(() => {
+    LayoutAnimation.configureNext({
+      duration: 250,
+      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.scaleXY, duration: 250 },
+      update: { type: LayoutAnimation.Types.easeInEaseOut, duration: 200 },
+      delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.scaleXY, duration: 250 },
+    });
+  }, [tasks]);
+
   const loadTasks = async () => {
     try {
       await dispatch(fetchTasks());
@@ -42,18 +52,24 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  const handleTaskComplete = async (taskId: string) => {
+  const handleTaskComplete = useCallback(async (taskId: string) => {
     try {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
+      LayoutAnimation.configureNext({
+        duration: 250,
+        create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 250 },
+        update: { type: LayoutAnimation.Types.easeInEaseOut, duration: 200 },
+        delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 250 },
+      });
       await dispatch(toggleTaskCompletion({ id: taskId, completed: !task.completed }));
     } catch (error) {
       console.error('Failed to update task:', error);
       Alert.alert('Error', 'Failed to update task. Please try again.');
     }
-  };
+  }, [tasks, dispatch]);
 
-  const handleTaskDelete = async (taskId: string) => {
+  const handleTaskDelete = useCallback(async (taskId: string) => {
     Alert.alert(
       'Delete Task',
       'Are you sure you want to delete this task?',
@@ -63,27 +79,32 @@ const HomeScreen: React.FC = () => {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await dispatch(deleteTask(taskId));
-            } catch (error) {
-              console.error('Failed to delete task:', error);
-              Alert.alert('Error', 'Failed to delete task. Please try again.');
-            }
+            setDeletingId(taskId);
           },
         },
       ]
     );
-  };
+  }, []);
 
-  const handleTaskPress = (taskId: string, taskName: string) => {
+  const handleDeleteAnimationEnd = useCallback(async (taskId: string) => {
+    try {
+      await dispatch(deleteTask(taskId));
+    } catch (error) {
+      console.error('Failed to delete task after animation:', error);
+      Alert.alert('Error', 'Failed to delete task. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
+  }, [dispatch]);
+
+  const handleTaskPress = useCallback((taskId: string, taskName: string) => {
     const task = tasks.find(t => t.id === taskId);
     (navigation as any).navigate(SCREENS.TASK_DETAILS, {
       taskId,
       taskName,
       completed: task?.completed ?? false,
-      task: task,
     });
-  };
+  }, [navigation, tasks]);
 
   const handleAddTask = () => {
     const title = newTaskName.trim();
@@ -98,11 +119,17 @@ const HomeScreen: React.FC = () => {
     setNewTaskName('');
   };
 
-  const handleQuickSave = async () => {
+  const handleQuickSave = useCallback(async () => {
     const title = newTaskName.trim();
     if (!title) return;
 
     try {
+      LayoutAnimation.configureNext({
+        duration: 250,
+        create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 250 },
+        update: { type: LayoutAnimation.Types.easeInEaseOut, duration: 200 },
+        delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 250 },
+      });
       const newTaskData = {
         title: title,
         description: '',
@@ -120,18 +147,26 @@ const HomeScreen: React.FC = () => {
       console.error('Failed to quick save task:', error);
       Alert.alert('Error', 'Failed to save task. Please try again.');
     }
-  };
+  }, [newTaskName, dispatch, selectedGroup.id]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
+    LayoutAnimation.configureNext({
+      duration: 250,
+      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 250 },
+      update: { type: LayoutAnimation.Types.easeInEaseOut, duration: 200 },
+      delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity, duration: 250 },
+    });
     loadTasks();
-  };
+  }, [loadTasks]);
 
-  const filteredTasks = tasks.filter(t => {
-    if (t.group_id !== selectedGroup.id) return false;
-    if (status === 'all') return true;
-    if (status === 'in_progress') return !t.completed;
-    return !!t.completed;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (t.group_id !== selectedGroup.id) return false;
+      if (status === 'all') return true;
+      if (status === 'in_progress') return !t.completed;
+      return !!t.completed;
+    });
+  }, [tasks, selectedGroup.id, status]);
 
   return (
     <View style={styles.container}>
@@ -149,10 +184,7 @@ const HomeScreen: React.FC = () => {
           onPress={() => setStatus('completed')}
         />
       </View>
-      <TaskGroup
-        groupName={selectedGroup.name + '  '}
-        groupColor={selectedGroup.color}
-      />
+      <TaskGroup />
       <TaskList
         tasks={filteredTasks}
         onTaskComplete={handleTaskComplete}
@@ -160,6 +192,8 @@ const HomeScreen: React.FC = () => {
         onTaskPress={handleTaskPress}
         onRefresh={handleRefresh}
         refreshing={loading}
+        deletingId={deletingId}
+        onDeleteAnimationEnd={handleDeleteAnimationEnd}
       />
       <View style={styles.inputRow}>
         <TextInput

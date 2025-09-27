@@ -25,4 +25,4 @@ const ButtonTab: React.FC<ButtonTabProps> = ({ title, active = false, onPress })
   );
 };
 
-export default ButtonTab;
+export default React.memo(ButtonTab);

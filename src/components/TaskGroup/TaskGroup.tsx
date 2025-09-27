@@ -5,8 +5,8 @@ import { styles } from './TaskGroup.styles';
 import { TaskGroup as TG, useTaskGroup } from '../../context/TaskGroupContext';
 
 interface TaskGroupProps {
-  groupName: string;
-  groupColor: string;
+  groupName?: string;
+  groupColor?: string;
   onSelectGroup?: (group: TG) => void;
 }
 
@@ -20,11 +20,11 @@ const TaskGroup: React.FC<TaskGroupProps> = ({
   const anchorRef = useRef<View | null>(null);
   const [position, setPosition] = useState<{ x: number; y: number; width: number; height: number }>({ x: 0, y: 0, width: 0, height: 0 });
 
-  const handleSelect = (group: TG) => {
+  const handleSelect = useCallback((group: TG) => {
     setSelectedGroup(group);
     onSelectGroup?.(group);
     setOpen(false);
-  };
+  }, [onSelectGroup, setSelectedGroup]);
 
   const openMenu = useCallback(() => {
     if (anchorRef.current && 'measureInWindow' in anchorRef.current) {
@@ -37,10 +37,13 @@ const TaskGroup: React.FC<TaskGroupProps> = ({
     }
   }, []);
 
+  const displayName = (groupName ?? selectedGroup.name) + '  ';
+  const displayColor = groupColor ?? selectedGroup.color;
+
   return (
     <TouchableOpacity activeOpacity={0.8} onPress={openMenu} style={styles.container} ref={anchorRef as any}>
-      <View style={[styles.colorBar, { backgroundColor: groupColor }]} />
-      <Text style={styles.groupName}>{groupName}</Text>
+      <View style={[styles.colorBar, { backgroundColor: displayColor }]} />
+      <Text style={styles.groupName}>{displayName}</Text>
       <TouchableOpacity onPress={openMenu} style={styles.dropdown}>
         <Icon name="arrow-down-drop-circle-outline" size={26} color="#333" />
       </TouchableOpacity>
@@ -78,4 +81,4 @@ const TaskGroup: React.FC<TaskGroupProps> = ({
   );
 }
 
-export default TaskGroup;
+export default React.memo(TaskGroup);
