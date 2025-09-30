@@ -3,11 +3,13 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@rea
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import StackNavigator from './StackNavigator';
 import { SCREENS } from '../constants/screens';
+import { AuthProvider } from '../context/AuthContext';
 
 const Drawer = createDrawerNavigator();
 
 const DrawerNavigator = () => {
   return (
+    <AuthProvider>
     <Drawer.Navigator
       screenOptions={{
         headerShown: false,
@@ -68,6 +70,7 @@ const DrawerNavigator = () => {
     >
       <Drawer.Screen name="TaskTracker" component={StackNavigator} />
     </Drawer.Navigator>
+    </AuthProvider>
   );
 };
 

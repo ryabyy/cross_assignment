@@ -1,97 +1,109 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Task Tracker (React Native)
 
-# Getting Started
+An educational React Native app that demonstrates a modern task manager: create, organize, and track tasks across color‑coded groups with priorities, dates, tags, live search, and biometric protection.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+This project was built as part of a React Native course. It uses common libraries for navigation, icons, state, persistence, and biometrics.
 
-## Step 1: Start Metro
+---
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Features
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **Task management**
+  - Add new tasks from the home screen or a detailed form
+  - Edit existing tasks; delete tasks with confirmation
+  - Mark tasks done/undone
+  - Set **priority**, **start** and **end** dates
+  - Add **tags** (text field)
+- **Grouping**
+  - Organize tasks into named groups with a **color**
+  - Quickly switch current group; add/edit groups
+- **Quick add**
+  - Long‑press the add button to quickly create a task from the input field
+- **Live search**
+  - Toggle a search bar from the header
+  - Filters tasks in the current group and the selected status (All / In progress / Completed)
+  - Matches against task title, description, and tags
+- **Biometric lock (session)**
+  - Uses fingerprint/Face ID to unlock the app session
+  - Relocks when the app goes background/inactive; prompts again on return
+  - Avoids showing task content before auth is resolved
+- **Nice touches**
+  - Smooth UI transitions with `LayoutAnimation`
+  - Vector icons throughout the UI
 
-```sh
-# Using npm
-npm start
+---
 
-# OR using Yarn
-yarn start
-```
+## Tech stack
 
-## Step 2: Build and run your app
+- **Navigation**: `@react-navigation/native`, stack/drawer navigators
+- **State & persistence**: Redux Toolkit and `redux-persist`
+- **Biometrics**: `react-native-biometrics`
+- **Icons**: `react-native-vector-icons` (MaterialIcons, MaterialCommunityIcons)
+- **UI**: React Native components, `LayoutAnimation`
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+---
 
-### Android
+## Project structure (high level)
 
-```sh
-# Using npm
-npm run android
+- `App.tsx` — app root, providers, navigation container
+- `src/navigation/` — stack and drawer navigators
+- `src/screens/` — Home, Task details, Settings, About
+- `src/components/` — reusable UI (Header, TaskList, TaskForm, TaskGroup, Security/UnlockGate)
+- `src/context/` — contexts (`TaskGroupContext`, `AuthContext` for biometrics)
+- `src/store/` — Redux store and slices
+- `src/api/` — API client and types for cloud sync (request/response shapes, adapters, utilities)
 
-# OR using Yarn
-yarn android
-```
+---
 
-### iOS
+## Getting started
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+Before running, complete the official React Native environment setup (Android/iOS) for your OS:
+https://reactnative.dev/docs/set-up-your-environment
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### 1) Start Metro
+Use your preferred package manager to start the Metro bundler from the project root.
 
-```sh
-bundle install
-```
+### 2) Run on a device/emulator
+- Android: run with your usual RN script or from Android Studio
+- iOS: install CocoaPods and run from Xcode or your usual RN script
 
-Then, and every time you update your native dependencies, run:
+If everything is set up correctly, the app launches in your emulator/simulator or on device. Hot reloading (Fast Refresh) is enabled.
 
-```sh
-bundle exec pod install
-```
+---
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+## Biometrics notes (testing on emulator/simulator)
 
-```sh
-# Using npm
-npm run ios
+- The app queries sensor availability on launch and shows a lock screen if available.
+- On Android Emulator:
+  - Ensure the AVD supports fingerprint
+  - Enroll a fingerprint inside the emulator OS (Settings → Security → Fingerprint)
+  - When prompted by the app, use Emulator → Extended Controls → Fingerprint → "Touch Sensor"
+- On iOS Simulator: ensure Face ID is available and enabled in features; configure Face ID enrollment for testing.
 
-# OR using Yarn
-yarn ios
-```
+If no biometric sensor is available or nothing is enrolled, the app stays unlocked (bypass) to avoid blocking usage during development.
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## Common actions
 
-## Step 3: Modify your app
+- **Add a task**: type into the input field and tap the + button, or open the detailed form
+- **Quick add**: long‑press the + button to quickly create from the input
+- **Switch status**: use the tabs (All / In progress / Completed)
+- **Search**: tap the search icon in the header to reveal the search field; type to filter; tap the arrow to hide and clear
+- **Groups**: select the current group, or add/edit groups (name + color)
+- **Biometrics**: on app open or when returning from background, authenticate to view content
 
-Now that you have successfully run the app, let's make changes!
+---
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## Troubleshooting
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+- Ensure your environment is correctly set up for React Native (Android SDK/iOS toolchain)
+- For Android biometrics, confirm fingerprints are enrolled inside the emulator OS
+- Rebuild the app after adding/changing native dependencies
+- If vector icons don’t render, confirm fonts are linked (Gradle task is already included)
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+---
 
-## Congratulations! :tada:
+## About
 
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+This repository demonstrates a small but complete React Native app focused on practical UI patterns, navigation, state management, persistence, animations, and biometric gating. It was created for educational purposes within a React Native course.

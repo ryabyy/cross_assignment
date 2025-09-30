@@ -12,6 +12,7 @@ import { convertPriorityToNumber } from '../../api/utils';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { createTask as createTaskThunk, updateTask as updateTaskThunk, deleteTask as deleteTaskThunk, toggleTaskCompletion as toggleTaskCompletionThunk } from '../../store/tasksSlice';
 import { useTaskGroup } from '../../context/TaskGroupContext';
+import UnlockGate from '../../components/Security/UnlockGate';
 
 type RootStackParamList = {
   TaskDetails: { 
@@ -298,6 +299,7 @@ const TaskScreen: React.FC = () => {
   };
 
   return (
+    <UnlockGate>
     <View style={styles.container}>
       <View style={styles.content}>
         <TaskGroup
@@ -365,6 +367,7 @@ const TaskScreen: React.FC = () => {
         </View>
       )}
     </View>
+    </UnlockGate>
   );
 };
 

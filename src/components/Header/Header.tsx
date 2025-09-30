@@ -4,7 +4,12 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from './Header.styles';
 import { useNavigation } from '@react-navigation/native';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onPressSearch?: () => void;
+  searchActive?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ onPressSearch: onPressSearch, searchActive: searchActive }) => {
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
@@ -12,8 +17,8 @@ const Header: React.FC = () => {
         <Icon name="menu" size={30} color="#006dfc" />
       </TouchableOpacity>
       <Text style={styles.title}>Task Tracker</Text>
-      <TouchableOpacity onPress={() => {}}>
-        <Icon name="search" size={30} color="#006dfc" />
+      <TouchableOpacity onPress={onPressSearch}>
+        <Icon name={searchActive ? 'keyboard-arrow-up' : 'search'} size={30} color="#006dfc" />
       </TouchableOpacity>
     </View>
   );

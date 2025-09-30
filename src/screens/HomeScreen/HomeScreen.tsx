@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
-import { View, TextInput, Alert, Pressable, LayoutAnimation } from 'react-native';
+import { View, TextInput, Alert, Pressable, LayoutAnimation, TouchableOpacity } from 'react-native';
 import Header from '../../components/Header/Header';
 import TaskList from '../../components/TaskList/TaskList';
 import ButtonTab from '../../components/ButtonTab/ButtonTab';
@@ -11,6 +11,7 @@ import { SCREENS } from '../../constants/screens';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { createTask, deleteTask, fetchTasks, toggleTaskCompletion } from '../../store/tasksSlice';
 import { useTaskGroup } from '../../context/TaskGroupContext';
+import UnlockGate from '../../components/Security/UnlockGate';
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -22,6 +23,8 @@ const HomeScreen: React.FC = () => {
   type StatusFilter = 'all' | 'in_progress' | 'completed';
   const [status, setStatus] = useState<StatusFilter>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     dispatch(fetchTasks());
@@ -160,17 +163,55 @@ const HomeScreen: React.FC = () => {
   }, [loadTasks]);
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter(t => {
+    const base = tasks.filter(t => {
       if (t.group_id !== selectedGroup.id) return false;
       if (status === 'all') return true;
       if (status === 'in_progress') return !t.completed;
       return !!t.completed;
     });
-  }, [tasks, selectedGroup.id, status]);
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter(t => {
+      const title = (t.title || '').toLowerCase();
+      const description = (t.description || '').toLowerCase();
+      const tags = (t.tags || '').toLowerCase();
+      return title.includes(q) || description.includes(q) || tags.includes(q);
+    });
+  }, [tasks, selectedGroup.id, status, searchQuery]);
+
+  const toggleSearch = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (showSearch) {
+      setSearchQuery('');
+      setShowSearch(false);
+    } else {
+      setShowSearch(true);
+    }
+  }, [showSearch]);
 
   return (
+    <UnlockGate>
     <View style={styles.container}>
-      <Header />
+      <Header onPressSearch={toggleSearch} searchActive={showSearch} />
+      {showSearch && (
+        <View style={styles.searchWrap}>
+          <View style={styles.searchRow}>
+            <TextInput
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.searchInput}
+              returnKeyType="search"
+              autoFocus
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Icon name="close" size={22} color="#7e7e7e" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
       <View style={styles.statusTabs}>
         <ButtonTab title="All" active={status === 'all'} onPress={() => setStatus('all')} />
         <ButtonTab
@@ -207,6 +248,7 @@ const HomeScreen: React.FC = () => {
         <Pressable
           onPress={handleAddTask}
           onLongPress={handleQuickSave}
+          delayLongPress={250}
           style={({ pressed }) => [
             styles.addButton,
             pressed && styles.addButtonPressed
@@ -216,6 +258,7 @@ const HomeScreen: React.FC = () => {
         </Pressable>
       </View>
     </View>
+    </UnlockGate>
   );
 };
 
